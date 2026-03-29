@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Globe, Twitter, Instagram, Linkedin } from "lucide-react";
+import { Globe, Link2 } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -23,18 +23,19 @@ export default function Footer() {
             <Link href="/about" className="hover:text-primary transition-colors">Contact</Link>
           </nav>
 
+          {/* Social links — lucide-react v1.7 has no Twitter/Instagram/LinkedIn icons; using generic Link2 */}
           <div className="flex items-center gap-4 text-muted-foreground">
-            <a href="#" className="hover:text-primary transition-colors">
-              <Twitter className="h-5 w-5" />
-              <span className="sr-only">Twitter</span>
+            <a href="#" className="hover:text-primary transition-colors flex items-center gap-1 text-xs font-medium">
+              <Link2 className="h-4 w-4" />
+              Twitter
             </a>
-            <a href="#" className="hover:text-primary transition-colors">
-              <Instagram className="h-5 w-5" />
-              <span className="sr-only">Instagram</span>
+            <a href="#" className="hover:text-primary transition-colors flex items-center gap-1 text-xs font-medium">
+              <Link2 className="h-4 w-4" />
+              Instagram
             </a>
-            <a href="#" className="hover:text-primary transition-colors">
-              <Linkedin className="h-5 w-5" />
-              <span className="sr-only">LinkedIn</span>
+            <a href="#" className="hover:text-primary transition-colors flex items-center gap-1 text-xs font-medium">
+              <Link2 className="h-4 w-4" />
+              LinkedIn
             </a>
           </div>
         </div>

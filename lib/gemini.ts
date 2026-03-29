@@ -1,54 +1,28 @@
-import type { TripFormValues, Itinerary } from "@/types";
-
 const GEMINI_API_URL =
   "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
 
-function buildPrompt(trip: TripFormValues): string {
-  return `You are an expert travel planner. Create a detailed day-by-day itinerary for the following trip:
-
-Destination: ${trip.destination}
-Duration: ${trip.duration} days
-Travelers: ${trip.travelers} person(s)
-Budget level: ${trip.budget}
-Interests: ${trip.interests.length ? trip.interests.join(", ") : "general sightseeing"}
-
-Respond ONLY with a valid JSON object matching this TypeScript type (no markdown, no explanation):
-
-{
-  "destination": string,
-  "duration": number,
-  "travelers": number,
-  "budget": "budget" | "moderate" | "luxury",
-  "days": [
-    {
-      "day": number,
-      "title": string,
-      "activities": [
-        {
-          "time": string,
-          "title": string,
-          "description": string,
-          "location": string
-        }
-      ]
-    }
-  ],
-  "tips": string[]
-}`;
-}
-
-export async function generateItinerary(trip: TripFormValues): Promise<Itinerary> {
+/**
+ * Sends a prompt to the Gemini API and returns the raw text response.
+ * Must only be called from server-side code (API routes, Server Components).
+ * GEMINI_API_KEY is never exposed to the client.
+ */
+export async function callGemini(prompt: string): Promise<string> {
   const apiKey = process.env.GEMINI_API_KEY;
+
   if (!apiKey) {
-    throw new Error("GEMINI_API_KEY environment variable is not set.");
+    throw new Error(
+      "GEMINI_API_KEY environment variable is not set. " +
+        "Add it to .env.local — see README for instructions."
+    );
   }
 
   const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      contents: [{ parts: [{ text: buildPrompt(trip) }] }],
+      contents: [{ parts: [{ text: prompt }] }],
       generationConfig: {
+        // Force the model to return valid JSON — no markdown fences
         responseMimeType: "application/json",
         temperature: 0.7,
       },
@@ -57,15 +31,21 @@ export async function generateItinerary(trip: TripFormValues): Promise<Itinerary
 
   if (!response.ok) {
     const errorBody = await response.text();
-    throw new Error(`Gemini API error ${response.status}: ${errorBody}`);
+    throw new Error(
+      `Gemini API responded with status ${response.status}: ${errorBody}`
+    );
   }
 
   const data = await response.json();
-  const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  const text: string | undefined =
+    data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
-  if (!raw) {
-    throw new Error("No content returned from Gemini API.");
+  if (!text) {
+    throw new Error(
+      "Gemini returned an empty response. " +
+        "Check that your API key has access to the gemini-2.0-flash model."
+    );
   }
 
-  return JSON.parse(raw) as Itinerary;
+  return text;
 }
